@@ -14,18 +14,20 @@ export function bomInfo(bomNo, itemNo) {
 
 
 
-// 查询BOM列表（占位）
-export function listBom() {
-  return request({
-    url: 'zy/mes/bom/list',
-    method: 'get'
-  })
-}
 
-// 新增子节点（占位）
+// 新增子节点
+// data 结构示例：
+// [
+//   {
+//     itemNo: '614471',
+//     useItemNo: '614970',
+//     useItemCount: 2,
+//     useItemType: '01'
+//   }
+// ]
 export function addBomChild(data) {
   return request({
-    url: 'zy/mes/bomUsed/add',
+    url: 'zy/mes/bomUsed/load',
     method: 'post',
     data
   })

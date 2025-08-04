@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <el-form :model="queryParams" ref="queryRef" class="query-form commen-search" :inline="true">
+    <el-form ref="queryRef" :model="queryParams" class="query-form commen-search" :inline="true">
       <el-form-item label="BOM号" class="condition">
         <el-input v-model="queryParams.bomNo" placeholder="请输入BOM号" clearable />
       </el-form-item>
@@ -33,16 +33,16 @@
       <el-table-column label="操作" width="120">
         <template slot-scope="scope">
           <el-button
+            v-if="scope.row.parentCode"
             type="text"
             size="mini"
-            v-if="scope.row.parentCode"
             @click="handleAdd(scope.row)"
           >新增</el-button>
           <el-button
+            v-if="scope.row.parentCode"
             type="text"
             size="mini"
             style="color: #f56c6c"
-            v-if="scope.row.parentCode"
             @click="handleDelete(scope.row)"
           >删除</el-button>
         </template>
@@ -50,8 +50,8 @@
     </el-table>
 
     <pagination
-      style="text-align: right"
       v-show="pageTotal>0"
+      style="text-align: right"
       :total="pageTotal"
       :page.sync="queryParams.pageNum"
       :limit.sync="queryParams.pageSize"
@@ -62,8 +62,9 @@
       <el-table
         :data="bomOptions"
         highlight-current-row
-        @row-click="handleBomRowClick"
         style="width: 100%"
+        @row-click="handleBomRowClick"
+
       >
         <el-table-column label="名称" prop="itemName" />
         <el-table-column label="物料号" prop="itemNo" />
@@ -85,7 +86,8 @@
 </template>
 
 <script>
-import { bomInfo,listBom, addBomChild, deleteBomChild  } from '@/api/mes/base/bom.js'
+import { bomInfo, addBomChild, deleteBomChild  } from '@/api/mes/base/bom.js'
+import { pagelist as itemStockPagelist } from '@/api/mes/base/itemStock.js'
 
 
 export default {
@@ -151,12 +153,14 @@ export default {
       })
     },
 
+
     handleAdd(row) {
       this.currentNode = row
       this.selectedBom = null
       this.bomDialogVisible = true
-      listBom().then(res => {
-        this.bomOptions = res.data || []
+      const query = { pageIndex: 1, pageSize: 10 }
+      itemStockPagelist(query).then(res => {
+        this.bomOptions = res.rows || []
       })
     },
     handleDelete(row) {
@@ -175,14 +179,18 @@ export default {
         this.$message.warning('请选择BOM')
         return
       }
-      const payload = {
-        parentId: this.currentNode.usedId,
-        bom: this.selectedBom
-      }
-      addBomChild(payload).then(() => {
-        this.$message.success('新增成功（接口占位）')
+      const payload = [{
+        itemNo: this.currentNode.itemNo,
+        useItemNo: this.selectedBom.itemNo,
+        useItemCount: this.selectedBom.fixedUsed || 1,
+        useItemType: '01'
+      }]
+      addBomChild(payload).then(res => {
+        this.$message.success(res.msg || '新增成功')
         this.bomDialogVisible = false
         this.getData()
+      }).catch(() => {
+        this.$message.error('新增失败')
       })
     },
     formatItemType(type) {
