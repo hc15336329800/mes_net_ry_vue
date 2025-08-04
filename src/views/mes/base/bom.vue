@@ -157,24 +157,12 @@
 
 
 <script>
+
+import { pagelist as itemStockPagelist } from '@/api/mes/base/itemStock'
+
 export default {
   data() {
-    const mockData = [
-      {
-        id: 1,
-        bomNo: 'BOM001',
-        itemNo: 'ITEM001',
-        itemName: '产品1',
-        itemModel: '型号A',
-        itemOrigin: 'self',
-        itemCount: 100,
-        netWeight: 10,
-        itemMeasure: 'kg',
-        location: 'A1',
-        locationDesc: '仓库A1',
-        createdTime: '2024-01-01 10:00:00'
-      }
-    ]
+
     return {
       // 查询参数
       queryParams: {
@@ -199,7 +187,7 @@ export default {
         { code: 'purchase', name: '采购' }
       ],
       // 列表数据
-      allData: mockData,
+      allData: [],
       pageList: [],
       pageTotal: 0,
       // 弹窗
@@ -231,24 +219,15 @@ export default {
   methods: {
     /** 获取列表数据 */
     getData() {
-      return new Promise(resolve => {
-        setTimeout(() => {
-          const { bomNo, itemNo, itemName } = this.queryParams.params
-          const location = this.queryParams.location
-          const list = this.allData.filter(item => {
-            return (
-              (!bomNo || item.bomNo.includes(bomNo)) &&
-              (!itemNo || item.itemNo.includes(itemNo)) &&
-              (!itemName || item.itemName.includes(itemName)) &&
-              (!location || item.location === location)
-            )
-          })
-          this.pageTotal = list.length
-          const start = (this.queryParams.page.page_num - 1) * this.queryParams.page.page_size
-          const end = start + this.queryParams.page.page_size
-          this.pageList = list.slice(start, end)
-          resolve()
-        }, 300)
+      const query = {
+        pageIndex: this.queryParams.page.page_num,
+        pageSize: this.queryParams.page.page_size,
+        ...this.queryParams.params,
+        location: this.queryParams.location
+      }
+      itemStockPagelist(query).then(res => {
+        this.pageList = res.rows || []
+        this.pageTotal = res.total || 0
       })
     },
     /** 搜索按钮 */
