@@ -164,10 +164,12 @@ export default {
       })
     },
     handleDelete(row) {
-      this.$confirm('确认删除该节点吗？', '提示').then(() => {
-        deleteBomChild(row.usedId).then(() => {
-          this.$message.success('删除成功（接口占位）')
+      this.$confirm('确认删除该节点及其所有子节点吗？', '提示').then(() => {
+        deleteBomChild(row.usedId).then(res => {
+          this.$message.success(res.msg || '删除成功')
           this.getData()
+        }).catch(() => {
+          this.$message.error('删除失败')
         })
       }).catch(() => {})
     },

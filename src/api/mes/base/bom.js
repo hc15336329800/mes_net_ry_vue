@@ -33,10 +33,11 @@ export function addBomChild(data) {
   })
 }
 
-// 删除子节点（占位）
-export function deleteBomChild(usedId) {
+// 删除指定节点及其子节点
+export function deleteBomChild(id) {
   return request({
-    url: `zy/mes/bomUsed/${usedId}`,
-    method: 'delete'
+    url: 'zy/mes/bomUsed/delete_bom',
+    method: 'post',
+    data: id
   })
 }
