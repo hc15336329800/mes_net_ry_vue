@@ -1,23 +1,30 @@
+<!--bom列表-->
 <template>
   <div class="app-container">
+
+    <!--    搜索框-->
     <el-form :model="queryParams" ref="queryRef" class="query-form commen-search" :inline="true">
-      <!--      <el-form-item label="母件图纸号" class="condition">-->
-      <!--        <BomNoSelect ref="BomNoSelect" :item-no.sync="queryParams.params.parentItemNo"/>-->
-      <!--      </el-form-item>-->
-      <!--      <el-form-item label="子件图纸号" class="condition">-->
-      <!--        <multipleBomNo ref="multipleBomNo" :item-nos.sync="queryParams.params.childItemNos"/>-->
-      <!--      </el-form-item>-->
-      <el-form-item label="状态" class="condition">
-        <el-select v-model="queryParams.orderStatus" placeholder="请选择状态" clearable>
+      <el-form-item label="BOM号" class="condition">
+        <BomNoSelect :item-no.sync="queryParams.params.bomNo" />
+      </el-form-item>
+
+      <el-form-item label="物料号" class="condition">
+        <ItemNoSelect :item-no.sync="queryParams.params.itemNo" />
+      </el-form-item>
+
+      <el-form-item label="产品名称" class="condition">
+        <el-input v-model="queryParams.params.itemName" placeholder="请输入名称" clearable />
+      </el-form-item>
+      <el-form-item label="库位" class="condition">
+        <el-select v-model="queryParams.location" placeholder="请选择产品库位" clearable>
           <el-option
-            v-for="dict in statusList"
+            v-for="dict in locationList"
             :key="dict.code"
             :label="dict.name"
             :value="dict.code"
           />
         </el-select>
       </el-form-item>
-
       <el-form-item class="commen-button">
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
       </el-form-item>
@@ -26,271 +33,125 @@
       </el-form-item>
       <el-form-item></el-form-item>
     </el-form>
-    <!--    <el-row class="mb8">-->
-    <!--      <el-button-->
-    <!--        type="primary"-->
-    <!--        class="commen-button"-->
-    <!--        v-if="hasPerm('B006002000004')"-->
-    <!--        v-show="buttonShow"-->
-    <!--        icon="el-icon-plus"-->
-    <!--        @click="procAlloc"-->
-    <!--      >工序分配-->
-    <!--      </el-button>-->
-    <!--      <el-button type="primary" class="mb_20" @click="operHandle()">批量关闭</el-button>-->
-    <!--    </el-row>-->
 
+    <!--    工具栏-->
+    <el-row class="flex_row pb_10 c_b fw_bold fs_24">
+      <el-button
+        type="primary"
+        icon="el-icon-plus"
+        v-if="hasPerm('B002004000001')"
+        @click="handleAdd()"
+      >新增
+      </el-button>
 
-    <el-table
-      :data="pageList"
-      row-key="id"
-      :tree-props="{ children: 'children' }"
-      default-expand-all
-      border
-      style="width: 100%;"
-    >
-      <el-table-column label="部件名称" prop="itemName" />
-      <el-table-column label="物料号" prop="itemNo" />
-      <el-table-column label="BOM号" prop="bomNo" />
+    </el-row>
 
-      <el-table-column label="子件号" prop="useItemNo" />
-      <el-table-column label="用量" prop="useItemCount" />
-      <el-table-column label="父级编码" prop="parentCode" />
+    <!--    列表-->
+    <el-table :data="pageList" class="commen-table mt_20">
+      <el-table-column type="index" width="55" label="序号"></el-table-column>
+      <el-table-column label="Bom号" align="center" prop="bomNo" />
+      <el-table-column label="物料号" align="center" prop="itemNo" />
+      <el-table-column label="产品名称" align="center" prop="itemName" />
+      <el-table-column label="型号" align="center" prop="itemModel" />
+      <el-table-column label="来源" align="center" prop="itemOrigin" />
+      <el-table-column label="库存量" align="center" prop="itemCount" />
+      <el-table-column label="净重" align="center" prop="netWeight" />
+      <el-table-column label="单位" align="center" prop="itemMeasure" />
+      <el-table-column label="库位" align="center" prop="locationDesc" />
+      <el-table-column label="创建时间" align="center" prop="createdTime" />
+      <el-table-column label="操作" align="center" width="320" class-name="small-padding fixed-width">
+        <template slot-scope="scope">
+          <el-button link type="primary" icon="Edit" @click="handleDetail(scope.row)">工序详情</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUsedDetail(scope.row)">用料详情</el-button>
+          <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)">编辑</el-button>
+          <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
     </el-table>
-
-
     <pagination
       style="text-align: right"
       v-show="pageTotal>0"
       :total="pageTotal"
-      :page.sync="queryParams.pageNum"
-      :limit.sync="queryParams.pageSize"
+      :page.sync="queryParams.page.page_num"
+      :limit.sync="queryParams.page.page_size"
       @pagination="getData"
     />
+
+    <!-- 添加或修改对话框 -->
+    <el-dialog :title="title" :visible.sync="dialogShow" width="960px" @close="beforeClose">
+      <el-form :model="form" class="commen-form" :rules="rules" ref="form" label-width="100px">
+        <el-row>
+          <el-col :span="8">
+            <el-form-item prop="bomNo" label="图纸号">
+              <el-input v-model="form.bomNo" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="itemNo" label="产品编码">
+              <el-input v-model="form.itemNo" :disabled="form.id" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="itemName" label="产品名称">
+              <el-input v-model="form.itemName" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <el-row>
+          <el-col :span="8">
+            <el-form-item prop="itemModel" label="规格型号">
+              <el-input v-model="form.itemModel" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="itemOrigin" label="产品来源">
+              <el-select v-model="form.itemOrigin" placeholder="请选择产品来源" clearable>
+                <el-option
+                  v-for="dict in itemOriginList"
+                  :key="dict.code"
+                  :label="dict.name"
+                  :value="dict.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="location" label="库位">
+              <el-select v-model="form.location" placeholder="请选择产品库位" clearable>
+                <el-option
+                  v-for="dict in locationList"
+                  :key="dict.code"
+                  :label="dict.name"
+                  :value="dict.code"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="8">
+            <el-form-item prop="itemCount" label="库存量">
+              <el-input-number v-model="form.itemCount" :precision="3" :controls="false" :min="0"></el-input-number>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="netWeight" label="净重">
+              <el-input-number v-model="form.netWeight" :precision="3" :controls="false" :min="0"></el-input-number>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item prop="itemMeasure" label="单位">
+              <el-input v-model="form.itemMeasure" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+
+        <div class="dialog-footer" style="text-align: center;width:100%;">
+          <el-button @click="cancel">取 消</el-button>
+          <el-button type="primary" @click="submitForm">确 定</el-button>
+        </div>
+      </el-form>
+    </el-dialog>
   </div>
 </template>
-<script>
-
- import {bomInfo} from '@/api/mes/base/bom.js'  // 根据bom号查询bom树
-
-export default {
-  components: {
-  },
-  data() {
-    return {
-      statusList: [],
-      selectList: [],
-      multipleSelection: [],
-      // queryParams: {
-      //   orderNo: '',
-      //   parentItemNo: '',
-      //   // childItemNos: [],
-      //   orderDtlStatus: '04',
-      //   pageNum: 1,
-      //   pageSize: 100
-      // }
-
-      queryParams: {
-        bomNo: '',         // 查询用 BOM 编号
-        pageNum: 1,
-        pageSize: 10
-      },
-
-      form: {},
-      pageTotal: 0,
-      pageList: [],  // ✅ 正确：树形数据必须是数组
-
-      title: '',
-      dialogShow: false,
-      buttonShow: false,
-      rules: {
-        name: [{required: true, message: '请输入名称', trigger: 'blur'}],
-        remark: [{required: true, message: '请输入备注', trigger: 'blur'}]
-      }
-    }
-  },
-  created() {
-    this.buttonShow = true
-    this.getOptionData()
-
-    // 🌟 默认加载指定 bomNo 的数据
-    this.queryParams.bomNo = '2516001917-1'  // ⚠️ 可根据需要调整默认值
-    this.getData()
-  },
-
-  methods: {
-    /** 搜索按钮操作 */
-    handleQuery() {
-      this.queryParams.pageNum = 1
-      this.getData()
-    },
-    beforeClose() {
-      this.form = {}
-      this.$refs['form'].clearValidate()
-    },
-    /** 重置操作表单 */
-    handleReset() {
-      this.queryParams = {
-        orderNo: '',
-        parentItemNo: '',
-        // childItemNos: [],
-        orderDtlStatus: '',
-        pageNum: 1,
-        pageSize: 100
-      }
-      this.getData()
-    },
-    getOptionData() {
-      dictInfo('ORDER_STATUS', r => (this.statusList = r))
-    },
-
-    //初始化和查询
-    getData() {
-
-      getBomTreePage(this.queryParams).then(res => {
-        this.pageList = res.data || []
-        this.pageTotal = Number(res.page?.total_num || 0)
-
-        // 🌟调试检查
-        if (this.pageList.length === 0) {
-          this.$message.warning('暂无数据，请检查 bomNo 是否正确')
-        } else {
-          console.log('BOM 树数据加载成功：', this.pageList)
-        }
-      })
-
-
-    },
-    procAlloc() {
-      if (this.selectList.length == 0) {
-        this.$message.error('请选择工序分配的生产单！')
-        return
-      }
-      this.$router.push({
-        name: 'newprocessAllocation',
-        query: {
-          id: JSON.stringify(this.selectList)
-        }
-      })
-    },
-    updateOrderStatus(row, status) {
-      updateOrderStatus({
-        params: {
-          id: row.id,
-          orderDtlStatus: status
-        }
-      }).then(res => {
-        this.$message({
-          type: 'success',
-          message: '操作成功'
-        })
-        this.getData()
-      })
-    },
-    handleSelectionChange(val) {
-      if (val.length == this.pageList.length) {
-        //当前页数据全选
-        val.forEach(item => {
-          if (this.selectList.every(it => it != item.id)) {
-            this.selectList.push(item.id)
-            this.multipleSelection.push(item)
-          }
-        })
-      } else if (val.length > 0) {
-        //当前页数据部分改动
-        this.pageList.forEach(item => {
-          let index = val.findIndex(it => it.id == item.id)
-          if (index > -1) {
-            if (this.selectList.every(i => i != item.id)) {
-              this.selectList.push(item.id)
-              this.multipleSelection.push(item)
-            }
-          } else {
-            let i = this.selectList.findIndex(i => i == item.id)
-            if (i > -1) {
-              this.selectList.splice(i, 1)
-              this.multipleSelection.splice(i, 1)
-            }
-          }
-        })
-      } else if (val.length == 0) {
-        //当前页数据全删除
-        this.pageList.forEach(item => {
-          let index = this.selectList.findIndex(it => it == item.id)
-          if (index > -1) {
-            this.selectList.splice(index, 1)
-            this.multipleSelection.splice(index, 1)
-          }
-        })
-      }
-      console.log(this.multipleSelection, 'this.selectList')
-    },
-    operHandle() {
-      if (this.selectList.length <= 0) {
-        this.$message.error('请选择数据')
-        return
-      }
-      this.$confirm("确认批量关闭", '提示', {
-        confirmButtonText: '确认',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }).then(res => {
-        updateAllocation({
-          params: {
-            ids: this.selectList,
-            status: "06"
-          }
-        }).then(res => {
-          this.$message({
-            message: '操作成功',
-            type: 'success'
-          })
-          this.getData()
-
-        })
-      })
-
-
-    },
-    cancel() {
-      this.dialogShow = false
-      this.form = {}
-      this.$refs['form'].clearValidate()
-    }
-  }
-}
-</script>
-
-<style lang="scss" scoped>
-.input {
-  width: 380px;
-}
-
-::v-deep .el-form--inline .el-form-item {
-  margin-right: 20px;
-}
-
-::v-deep .my_label {
-  width: 120px;
-}
-
-.add_img {
-  width: 148px;
-  height: 148px;
-
-  img {
-    width: 100%;
-    height: 100%;
-  }
-
-  .delete_img {
-    width: 20px;
-    height: 20px;
-    right: -10px;
-    top: -15px;
-  }
-}
-
-.btn {
-  width: 200px;
-}
-</style>
