@@ -8,3 +8,22 @@ export function pagelist(query) {
     params: query
   })
 }
+
+// 查询物料分页列表
+export function pagelistmaterial(query) {
+  return request({
+    url: 'zy/mes/itemStock/pagelistmaterial',
+    method: 'get',
+    params: query
+  })
+}
+
+
+// 查询bom和物料 分页列表
+export function pagelistall(query) {
+  return request({
+    url: 'zy/mes/itemStock/pagelistall',
+    method: 'get',
+    params: query
+  })
+}

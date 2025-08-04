@@ -15,6 +15,10 @@
       <el-form-item class="commen-button reset">
         <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
       </el-form-item>
+
+      <el-form-item class="commen-button reset">
+        <el-button icon="el-icon-refresh" @click="">数量不对 待完善</el-button>
+      </el-form-item>
     </el-form>
 
     <el-table
@@ -60,7 +64,18 @@
       @pagination="getData"
     />
 
-    <el-dialog title="选择BOM" :visible.sync="bomDialogVisible" width="600px">
+    <el-dialog title="选择BOM" :visible.sync="bomDialogVisible" width="1024px">
+      <el-form :model="bomDialogQuery" :inline="true" class="dialog-query-form">
+        <el-form-item label="物料号">
+          <el-input v-model="bomDialogQuery.itemNo" placeholder="请输入物料号" clearable />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" icon="el-icon-search" @click="handleBomQuery">搜索</el-button>
+        </el-form-item>
+        <el-form-item label="用量">
+          <el-input-number v-model="useItemCount" :min="1" />
+        </el-form-item>
+      </el-form>
       <el-table
         :data="bomOptions"
         highlight-current-row
@@ -76,6 +91,14 @@
           </template>
         </el-table-column>
       </el-table>
+      <pagination
+        v-show="bomOptionsTotal>0"
+        style="text-align: right"
+        :total="bomOptionsTotal"
+        :page.sync="bomDialogQuery.pageNum"
+        :limit.sync="bomDialogQuery.pageSize"
+        @pagination="getBomOptions"
+      />
       <div slot="footer" class="dialog-footer">
         <el-button @click="bomDialogVisible = false">取 消</el-button>
         <el-button type="primary" @click="confirmAdd">确 定</el-button>
@@ -88,7 +111,7 @@
 
 <script>
 import { addBomChild, bomInfo, deleteBomChild } from '@/api/mes/base/bom.js'
-import { pagelist as itemStockPagelist } from '@/api/mes/base/itemStock.js'
+import {  pagelistall as itemStockPagelist } from '@/api/mes/base/itemStock.js'
 
 export default {
   data() {
@@ -103,9 +126,16 @@ export default {
       pageList: [], // 表格数据
       bomDialogVisible: false,
       bomOptions: [],
+      bomOptionsTotal: 0,
+      bomDialogQuery: {
+        itemNo: '',
+        pageNum: 1,
+        pageSize: 10
+      },
       selectedBom: null,
       currentNode: null,
-      rootItemNo: ''
+      rootItemNo: '',
+      useItemCount: 1
     }
   },
   created() {
@@ -158,11 +188,10 @@ export default {
     handleAdd(row) {
       this.currentNode = row
       this.selectedBom = null
+      this.useItemCount = 1
       this.bomDialogVisible = true
-      const query = { pageIndex: 1, pageSize: 10 }
-      itemStockPagelist(query).then(res => {
-        this.bomOptions = res.rows || []
-      })
+      this.bomDialogQuery = { itemNo: '', pageNum: 1, pageSize: 10 }
+      this.getBomOptions()
     },
     handleDelete(row) {
       this.$confirm('确认删除该节点及其所有子节点吗？', '提示').then(() => {
@@ -178,6 +207,21 @@ export default {
     handleBomRowClick(row) {
       this.selectedBom = row
     },
+    handleBomQuery() {
+      this.bomDialogQuery.pageNum = 1
+      this.getBomOptions()
+    },
+    getBomOptions() {
+      const query = {
+        pageIndex: this.bomDialogQuery.pageNum,
+        pageSize: this.bomDialogQuery.pageSize,
+        itemNo: this.bomDialogQuery.itemNo
+      }
+      itemStockPagelist(query).then(res => {
+        this.bomOptions = res.rows || []
+        this.bomOptionsTotal = res.total || 0
+      })
+    },
     confirmAdd() {
       if (!this.selectedBom) {
         this.$message.warning('请选择BOM')
@@ -186,7 +230,7 @@ export default {
       const payload = [{
         itemNo: this.currentNode.itemNo,
         useItemNo: this.selectedBom.itemNo,
-        useItemCount: this.selectedBom.fixedUsed || 1,
+        useItemCount: this.useItemCount,
         useItemType: '01'
       }]
       addBomChild(payload).then(res => {
@@ -200,18 +244,16 @@ export default {
     formatItemType(type) {
       return type === '01' ? 'BOM' : '物料'
     },
-    showAddButton(row) {
-      return row.itemType === '01'
-    },
-    showDeleteButton(row) {
-      if (row.itemNo === this.rootItemNo && row.parentCode === row.itemNo) {
-        return false
-      }
-      if (row.itemType === '00') {
-        return row.parentCode === this.rootItemNo
-      }
-      return true
 
+    // 只有顶级节点（父级编码为自身的节点）才显示新增按钮
+    showAddButton(row) {
+      return row.itemNo === this.rootItemNo && row.parentCode === row.itemNo
+    },
+
+
+    // 顶级节点不显示删除按钮  ，仅顶级节点的下一层（父级为根节点）显示删除按钮
+    showDeleteButton(row) {
+      return row.parentCode === this.rootItemNo && row.itemNo !== this.rootItemNo
     }
   }
 }

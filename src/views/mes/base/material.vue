@@ -147,7 +147,8 @@
 
 <script>
 
-import { pagelist as itemStockPagelist } from '@/api/mes/base/material'
+
+import {  pagelistmaterial as itemStockPagelist } from '@/api/mes/base/itemStock.js'
 
 export default {
   data() {
