@@ -30,6 +30,23 @@
       <el-table-column label="BOM号" prop="bomNo" />
       <el-table-column label="用量" prop="fixedUsed" />
       <el-table-column label="父级编码" prop="parentCode" />
+      <el-table-column label="操作" width="120">
+        <template slot-scope="scope">
+          <el-button
+            type="text"
+            size="mini"
+            v-if="scope.row.parentCode"
+            @click="handleAdd(scope.row)"
+          >新增</el-button>
+          <el-button
+            type="text"
+            size="mini"
+            style="color: #f56c6c"
+            v-if="scope.row.parentCode"
+            @click="handleDelete(scope.row)"
+          >删除</el-button>
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination
@@ -40,11 +57,35 @@
       :limit.sync="queryParams.pageSize"
       @pagination="getData"
     />
+
+    <el-dialog title="选择BOM" :visible.sync="bomDialogVisible" width="600px">
+      <el-table
+        :data="bomOptions"
+        highlight-current-row
+        @row-click="handleBomRowClick"
+        style="width: 100%"
+      >
+        <el-table-column label="名称" prop="itemName" />
+        <el-table-column label="物料号" prop="itemNo" />
+        <el-table-column label="类型" prop="itemType">
+          <template slot-scope="scope">
+            <span>{{ formatItemType(scope.row.itemType) }}</span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="bomDialogVisible = false">取 消</el-button>
+        <el-button type="primary" @click="confirmAdd">确 定</el-button>
+      </div>
+    </el-dialog>
+
+
+
   </div>
 </template>
 
 <script>
-import { bomInfo } from '@/api/mes/base/bom.js'
+import { bomInfo,listBom, addBomChild, deleteBomChild  } from '@/api/mes/base/bom.js'
 
 
 export default {
@@ -57,7 +98,11 @@ export default {
         pageSize: 10
       },
       pageTotal: 0,
-      pageList: [] // 表格数据
+      pageList: [], // 表格数据
+      bomDialogVisible: false,
+      bomOptions: [],
+      selectedBom: null,
+      currentNode: null
     }
   },
   created() {
@@ -104,7 +149,46 @@ export default {
         console.error('获取BOM信息失败:', err)
         this.$message.error('获取BOM信息失败')
       })
+    },
+
+    handleAdd(row) {
+      this.currentNode = row
+      this.selectedBom = null
+      this.bomDialogVisible = true
+      listBom().then(res => {
+        this.bomOptions = res.data || []
+      })
+    },
+    handleDelete(row) {
+      this.$confirm('确认删除该节点吗？', '提示').then(() => {
+        deleteBomChild(row.usedId).then(() => {
+          this.$message.success('删除成功（接口占位）')
+          this.getData()
+        })
+      }).catch(() => {})
+    },
+    handleBomRowClick(row) {
+      this.selectedBom = row
+    },
+    confirmAdd() {
+      if (!this.selectedBom) {
+        this.$message.warning('请选择BOM')
+        return
+      }
+      const payload = {
+        parentId: this.currentNode.usedId,
+        bom: this.selectedBom
+      }
+      addBomChild(payload).then(() => {
+        this.$message.success('新增成功（接口占位）')
+        this.bomDialogVisible = false
+        this.getData()
+      })
+    },
+    formatItemType(type) {
+      return type === '01' ? 'BOM' : '物料'
     }
+
   }
 }
 </script>
