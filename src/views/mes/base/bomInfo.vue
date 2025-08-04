@@ -5,6 +5,10 @@
         <el-input v-model="queryParams.bomNo" placeholder="请输入BOM号" clearable />
       </el-form-item>
 
+      <el-form-item label="物料号" class="condition">
+        <el-input v-model="queryParams.itemNo" placeholder="请输入物料号" clearable />
+      </el-form-item>
+
       <el-form-item class="commen-button">
         <el-button type="primary" icon="el-icon-search" @click="handleQuery">搜索</el-button>
       </el-form-item>
@@ -41,7 +45,8 @@
 </template>
 
 <script>
-import { bomInfo, getBomTreePage } from '@/api/mes/base/bom.js'
+import { bomInfo } from '@/api/mes/base/bom.js'
+
 
 export default {
   data() {
@@ -56,9 +61,12 @@ export default {
     }
   },
   created() {
-    // 默认加载指定bomNo的数据
-    this.queryParams.bomNo = '2516001917-1'
-    this.getData()
+    const { bomNo, itemNo } = this.$route.query
+    this.queryParams.bomNo = bomNo || ''
+    this.queryParams.itemNo = itemNo || ''
+    if (this.queryParams.bomNo) {
+      this.getData()
+    }
   },
   methods: {
     /** 搜索按钮操作 */
@@ -70,6 +78,8 @@ export default {
     handleReset() {
       this.queryParams = {
         bomNo: '',
+        itemNo: '',
+
         pageNum: 1,
         pageSize: 10
       }
