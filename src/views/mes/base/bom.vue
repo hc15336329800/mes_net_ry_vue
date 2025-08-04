@@ -1,9 +1,9 @@
 <!--bom列表-->
 <template>
-  <div class="app-container">
+  <div class="container">
 
     <!--    搜索框-->
-    <el-form :model="queryParams" ref="queryRef" class="query-form commen-search" :inline="true">
+    <el-form ref="queryRef" :model="queryParams" class="query-form commen-search" :inline="true">
       <el-form-item label="BOM号" class="condition">
         <BomNoSelect :item-no.sync="queryParams.params.bomNo" />
       </el-form-item>
@@ -31,7 +31,7 @@
       <el-form-item class="commen-button reset">
         <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
       </el-form-item>
-      <el-form-item></el-form-item>
+      <el-form-item />
     </el-form>
 
     <!--    工具栏-->
@@ -39,7 +39,6 @@
       <el-button
         type="primary"
         icon="el-icon-plus"
-        v-if="hasPerm('B002004000001')"
         @click="handleAdd()"
       >新增
       </el-button>
@@ -59,7 +58,7 @@
       <el-table-column label="单位" align="center" prop="itemMeasure" />
       <el-table-column label="库位" align="center" prop="locationDesc" />
       <el-table-column label="创建时间" align="center" prop="createdTime" />
-      <el-table-column label="操作" align="center" width="320" class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" min-width="250"   class-name="small-padding fixed-width">
         <template slot-scope="scope">
           <el-button link type="primary" icon="Edit" @click="handleDetail(scope.row)">工序详情</el-button>
           <el-button link type="primary" icon="Edit" @click="handleUsedDetail(scope.row)">用料详情</el-button>
@@ -79,7 +78,7 @@
 
     <!-- 添加或修改对话框 -->
     <el-dialog :title="title" :visible.sync="dialogShow" width="960px" @close="beforeClose">
-      <el-form :model="form" class="commen-form" :rules="rules" ref="form" label-width="100px">
+      <el-form ref="form" :model="form" class="commen-form" :rules="rules" label-width="100px">
         <el-row>
           <el-col :span="8">
             <el-form-item prop="bomNo" label="图纸号">
@@ -155,3 +154,233 @@
     </el-dialog>
   </div>
 </template>
+
+
+<script>
+export default {
+  data() {
+    const mockData = [
+      {
+        id: 1,
+        bomNo: 'BOM001',
+        itemNo: 'ITEM001',
+        itemName: '产品1',
+        itemModel: '型号A',
+        itemOrigin: 'self',
+        itemCount: 100,
+        netWeight: 10,
+        itemMeasure: 'kg',
+        location: 'A1',
+        locationDesc: '仓库A1',
+        createdTime: '2024-01-01 10:00:00'
+      }
+    ]
+    return {
+      // 查询参数
+      queryParams: {
+        params: {
+          bomNo: '',
+          itemNo: '',
+          itemName: ''
+        },
+        location: '',
+        page: {
+          page_num: 1,
+          page_size: 10
+        }
+      },
+      // 字典数据
+      locationList: [
+        { code: 'A1', name: '仓库A1' },
+        { code: 'B2', name: '仓库B2' }
+      ],
+      itemOriginList: [
+        { code: 'self', name: '自制' },
+        { code: 'purchase', name: '采购' }
+      ],
+      // 列表数据
+      allData: mockData,
+      pageList: [],
+      pageTotal: 0,
+      // 弹窗
+      dialogShow: false,
+      title: '',
+      form: {
+        id: null,
+        bomNo: '',
+        itemNo: '',
+        itemName: '',
+        itemModel: '',
+        itemOrigin: '',
+        itemCount: 0,
+        netWeight: 0,
+        itemMeasure: '',
+        location: '',
+        locationDesc: ''
+      },
+      rules: {
+        bomNo: [{ required: true, message: '图纸号不能为空', trigger: 'blur' }],
+        itemNo: [{ required: true, message: '产品编码不能为空', trigger: 'blur' }],
+        itemName: [{ required: true, message: '产品名称不能为空', trigger: 'blur' }]
+      }
+    }
+  },
+  created() {
+    this.getData()
+  },
+  methods: {
+    /** 获取列表数据 */
+    getData() {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          const { bomNo, itemNo, itemName } = this.queryParams.params
+          const location = this.queryParams.location
+          const list = this.allData.filter(item => {
+            return (
+              (!bomNo || item.bomNo.includes(bomNo)) &&
+              (!itemNo || item.itemNo.includes(itemNo)) &&
+              (!itemName || item.itemName.includes(itemName)) &&
+              (!location || item.location === location)
+            )
+          })
+          this.pageTotal = list.length
+          const start = (this.queryParams.page.page_num - 1) * this.queryParams.page.page_size
+          const end = start + this.queryParams.page.page_size
+          this.pageList = list.slice(start, end)
+          resolve()
+        }, 300)
+      })
+    },
+    /** 搜索按钮 */
+    handleQuery() {
+      this.queryParams.page.page_num = 1
+      this.getData()
+    },
+    /** 重置按钮 */
+    handleReset() {
+      this.queryParams = {
+        params: {
+          bomNo: '',
+          itemNo: '',
+          itemName: ''
+        },
+        location: '',
+        page: {
+          page_num: 1,
+          page_size: 10
+        }
+      }
+      this.getData()
+    },
+    /** 新增 */
+    handleAdd() {
+      this.title = '新增BOM'
+      this.form = {
+        id: null,
+        bomNo: '',
+        itemNo: '',
+        itemName: '',
+        itemModel: '',
+        itemOrigin: '',
+        itemCount: 0,
+        netWeight: 0,
+        itemMeasure: '',
+        location: '',
+        locationDesc: ''
+      }
+      this.dialogShow = true
+    },
+    /** 编辑 */
+    handleUpdate(row) {
+      this.title = '编辑BOM'
+      this.form = { ...row }
+      this.dialogShow = true
+    },
+    /** 删除 */
+    handleDelete(row) {
+      this.$confirm('是否确认删除该数据？', '提示', { type: 'warning' })
+        .then(() => {
+          return new Promise(resolve => {
+            setTimeout(() => {
+              this.allData = this.allData.filter(item => item.id !== row.id)
+              resolve()
+            }, 300)
+          })
+        })
+        .then(() => {
+          this.$message.success('删除成功')
+          this.getData()
+        })
+        .catch(() => {})
+    },
+    /** 提交表单 */
+    submitForm() {
+      this.$refs.form.validate(valid => {
+        if (!valid) return
+        new Promise(resolve => {
+          setTimeout(() => {
+            if (this.form.id) {
+              const index = this.allData.findIndex(item => item.id === this.form.id)
+              if (index !== -1) {
+                this.form.locationDesc = this.getLocationDesc(this.form.location)
+                this.allData.splice(index, 1, { ...this.form })
+              }
+            } else {
+              const newId = this.allData.length
+                ? Math.max(...this.allData.map(item => item.id)) + 1
+                : 1
+              this.form.id = newId
+              this.form.locationDesc = this.getLocationDesc(this.form.location)
+              this.form.createdTime = new Date().toISOString().slice(0, 19).replace('T', ' ')
+              this.allData.push({ ...this.form })
+            }
+            resolve()
+          }, 300)
+        }).then(() => {
+          this.dialogShow = false
+          this.$message.success('保存成功')
+          this.getData()
+        })
+      })
+    },
+    /** 取消 */
+    cancel() {
+      this.dialogShow = false
+      this.beforeClose()
+    },
+    /** 弹窗关闭前重置 */
+    beforeClose() {
+      this.$nextTick(() => {
+        this.$refs.form && this.$refs.form.resetFields()
+      })
+    },
+    /** 获取库位描述 */
+    getLocationDesc(code) {
+      const item = this.locationList.find(v => v.code === code)
+      return item ? item.name : ''
+    },
+    /** 查看工序详情 */
+    handleDetail(row) {
+      this.$message.info(`查看工序详情：${row.bomNo}`)
+    },
+    /** 查看用料详情 */
+    handleUsedDetail(row) {
+      this.$message.info(`查看用料详情：${row.bomNo}`)
+    }
+  }
+}
+</script>
+
+<style scoped>
+
+.container {
+
+  margin: 10px;
+  height: calc(100vh - 130px);
+  background-color: #FFFFFF;
+  padding: 20px;
+}
+
+
+
+</style>

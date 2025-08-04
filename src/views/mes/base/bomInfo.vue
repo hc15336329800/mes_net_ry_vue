@@ -1,5 +1,5 @@
 <template>
-  <div class="app-container">
+  <div class="container">
     <el-form :model="queryParams" ref="queryRef" class="query-form commen-search" :inline="true">
       <el-form-item label="BOM号" class="condition">
         <el-input v-model="queryParams.bomNo" placeholder="请输入BOM号" clearable />
@@ -101,6 +101,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+
+.container {
+
+  margin: 10px;
+  height: calc(100vh - 130px);
+  background-color: #FFFFFF;
+  padding: 20px;
+}
+
+
 .query-form {
   margin-bottom: 20px;
 }
