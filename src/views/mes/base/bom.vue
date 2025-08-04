@@ -5,11 +5,11 @@
     <!--    搜索框-->
     <el-form ref="queryRef" :model="queryParams" class="query-form commen-search" :inline="true">
       <el-form-item label="BOM号" class="condition">
-        <BomNoSelect :item-no.sync="queryParams.params.bomNo" />
+        <el-input v-model="queryParams.params.bomNo" placeholder="请输入BOM号" clearable />
       </el-form-item>
 
       <el-form-item label="物料号" class="condition">
-        <ItemNoSelect :item-no.sync="queryParams.params.itemNo" />
+        <el-input v-model="queryParams.params.itemNo" placeholder="请输入物料号" clearable />
       </el-form-item>
 
       <el-form-item label="产品名称" class="condition">
