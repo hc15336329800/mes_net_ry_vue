@@ -340,7 +340,7 @@ export default {
     },
     /** 查看工序详情 */
     handleDetail(row) {
-      // 跳转到工序详情页面，携带 bomNo 与 itemNo 参数
+       // 跳转到工序详情页面，携带 bomNo 与 itemNo 参数
       this.$tab.openPage(
         '工序详情',
         '/mes/bomInfo',

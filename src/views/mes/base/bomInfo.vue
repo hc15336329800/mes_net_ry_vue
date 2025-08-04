@@ -19,7 +19,7 @@
 
     <el-table
       :data="pageList"
-      row-key="id"
+      row-key="usedId"
       :tree-props="{ children: 'children' }"
       default-expand-all
       border
@@ -28,8 +28,7 @@
       <el-table-column label="部件名称" prop="itemName" />
       <el-table-column label="物料号" prop="itemNo" />
       <el-table-column label="BOM号" prop="bomNo" />
-      <el-table-column label="子件号" prop="useItemNo" />
-      <el-table-column label="用量" prop="useItemCount" />
+      <el-table-column label="用量" prop="fixedUsed" />
       <el-table-column label="父级编码" prop="parentCode" />
     </el-table>
 
@@ -53,6 +52,7 @@ export default {
     return {
       queryParams: {
         bomNo: '', // 查询用BOM编号
+        itemNo: '', // 物料号
         pageNum: 1,
         pageSize: 10
       },
@@ -93,8 +93,7 @@ export default {
       }
 
       // 调用接口获取BOM树数据
-      bomInfo(this.queryParams.bomNo).then(res => {
-        // 这里根据实际接口返回数据结构调整
+      bomInfo(this.queryParams.bomNo, this.queryParams.itemNo).then(res => {
         this.pageList = res.data || []
         this.pageTotal = this.pageList.length
 
