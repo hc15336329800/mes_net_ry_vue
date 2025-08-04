@@ -2,11 +2,11 @@
   <div class="container">
     <el-form ref="queryRef" :model="queryParams" class="query-form commen-search" :inline="true">
       <el-form-item label="BOM号" class="condition">
-        <el-input v-model="queryParams.bomNo" placeholder="请输入BOM号" clearable />
+        <el-input v-model="queryParams.bomNo" placeholder="请输入BOM号" clearable/>
       </el-form-item>
 
       <el-form-item label="物料号" class="condition">
-        <el-input v-model="queryParams.itemNo" placeholder="请输入物料号" clearable />
+        <el-input v-model="queryParams.itemNo" placeholder="请输入物料号" clearable/>
       </el-form-item>
 
       <el-form-item class="commen-button">
@@ -25,26 +25,28 @@
       border
       style="width: 100%;"
     >
-      <el-table-column label="部件名称" prop="itemName" />
-      <el-table-column label="物料号" prop="itemNo" />
-      <el-table-column label="BOM号" prop="bomNo" />
-      <el-table-column label="用量" prop="fixedUsed" />
-      <el-table-column label="父级编码" prop="parentCode" />
+      <el-table-column label="部件名称" prop="itemName"/>
+      <el-table-column label="物料号" prop="itemNo"/>
+      <el-table-column label="BOM号" prop="bomNo"/>
+      <el-table-column label="用量" prop="fixedUsed"/>
+      <el-table-column label="父级编码" prop="parentCode"/>
       <el-table-column label="操作" width="120">
         <template slot-scope="scope">
           <el-button
-            v-if="scope.row.parentCode"
+            v-if="showAddButton(scope.row)"
             type="text"
             size="mini"
             @click="handleAdd(scope.row)"
-          >新增</el-button>
+          >新增
+          </el-button>
           <el-button
-            v-if="scope.row.parentCode"
+            v-if="showDeleteButton(scope.row)"
             type="text"
             size="mini"
             style="color: #f56c6c"
             @click="handleDelete(scope.row)"
-          >删除</el-button>
+          >删除
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -66,8 +68,8 @@
         @row-click="handleBomRowClick"
 
       >
-        <el-table-column label="名称" prop="itemName" />
-        <el-table-column label="物料号" prop="itemNo" />
+        <el-table-column label="名称" prop="itemName"/>
+        <el-table-column label="物料号" prop="itemNo"/>
         <el-table-column label="类型" prop="itemType">
           <template slot-scope="scope">
             <span>{{ formatItemType(scope.row.itemType) }}</span>
@@ -81,14 +83,12 @@
     </el-dialog>
 
 
-
   </div>
 </template>
 
 <script>
-import { bomInfo, addBomChild, deleteBomChild  } from '@/api/mes/base/bom.js'
+import { addBomChild, bomInfo, deleteBomChild } from '@/api/mes/base/bom.js'
 import { pagelist as itemStockPagelist } from '@/api/mes/base/itemStock.js'
-
 
 export default {
   data() {
@@ -104,7 +104,8 @@ export default {
       bomDialogVisible: false,
       bomOptions: [],
       selectedBom: null,
-      currentNode: null
+      currentNode: null,
+      rootItemNo: ''
     }
   },
   created() {
@@ -143,6 +144,7 @@ export default {
       bomInfo(this.queryParams.bomNo, this.queryParams.itemNo).then(res => {
         this.pageList = res.data || []
         this.pageTotal = this.pageList.length
+        this.rootItemNo = this.pageList.length ? this.pageList[0].itemNo : ''
 
         if (this.pageList.length === 0) {
           this.$message.warning('暂无数据，请检查BOM号是否正确')
@@ -152,7 +154,6 @@ export default {
         this.$message.error('获取BOM信息失败')
       })
     },
-
 
     handleAdd(row) {
       this.currentNode = row
@@ -171,7 +172,8 @@ export default {
         }).catch(() => {
           this.$message.error('删除失败')
         })
-      }).catch(() => {})
+      }).catch(() => {
+      })
     },
     handleBomRowClick(row) {
       this.selectedBom = row
@@ -197,8 +199,20 @@ export default {
     },
     formatItemType(type) {
       return type === '01' ? 'BOM' : '物料'
-    }
+    },
+    showAddButton(row) {
+      return row.itemType === '01'
+    },
+    showDeleteButton(row) {
+      if (row.itemNo === this.rootItemNo && row.parentCode === row.itemNo) {
+        return false
+      }
+      if (row.itemType === '00') {
+        return row.parentCode === this.rootItemNo
+      }
+      return true
 
+    }
   }
 }
 </script>

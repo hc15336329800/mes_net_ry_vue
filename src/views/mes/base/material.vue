@@ -4,17 +4,13 @@
 
     <!--    搜索框-->
     <el-form ref="queryRef" :model="queryParams" class="query-form commen-search" :inline="true">
-      <el-form-item label="BOM号" class="condition">
-        <el-input v-model="queryParams.params.bomNo" placeholder="请输入BOM号" clearable />
-      </el-form-item>
+
 
       <el-form-item label="物料号" class="condition">
         <el-input v-model="queryParams.params.itemNo" placeholder="请输入物料号" clearable />
       </el-form-item>
 
-      <el-form-item label="产品名称" class="condition">
-        <el-input v-model="queryParams.params.itemName" placeholder="请输入名称" clearable />
-      </el-form-item>
+
       <el-form-item label="库位" class="condition">
         <el-select v-model="queryParams.location" placeholder="请选择产品库位" clearable>
           <el-option
@@ -31,27 +27,25 @@
       <el-form-item class="commen-button reset">
         <el-button icon="el-icon-refresh" @click="handleReset">重置</el-button>
       </el-form-item>
-      <el-form-item />
 
+      <el-form-item />
       <el-button
         type="primary"
         icon="el-icon-plus"
         @click="handleAdd()"
       >新增
       </el-button>
-
     </el-form>
 
     <!--    工具栏-->
     <el-row class="flex_row pb_10 c_b fw_bold fs_24">
-
 
     </el-row>
 
     <!--    列表-->
     <el-table :data="pageList" class="commen-table mt_20">
       <el-table-column type="index" width="55" label="序号"></el-table-column>
-      <el-table-column label="Bom号" align="center" prop="bomNo" />
+<!--      <el-table-column label="Bom号" align="center" prop="bomNo" />-->
       <el-table-column label="物料号" align="center" prop="itemNo" />
       <el-table-column label="产品名称" align="center" prop="itemName" />
       <el-table-column label="型号" align="center" prop="itemModel" />
@@ -61,12 +55,10 @@
       <el-table-column label="单位" align="center" prop="itemMeasure" />
       <el-table-column label="库位" align="center" prop="locationDesc" />
       <el-table-column label="创建时间" align="center" prop="createdTime" />
-      <el-table-column label="操作" align="center" min-width="300"   class-name="small-padding fixed-width">
+      <el-table-column label="操作" align="center" min-width="250"   class-name="small-padding fixed-width">
         <template slot-scope="scope">
-          <el-button link type="primary" icon="Edit" @click="handleDetail(scope.row)">构造详情</el-button>
-          <el-button link type="primary" icon="Edit" @click="handleDetail(scope.row)">工序详情</el-button>
-
-          <!--          <el-button link type="primary" icon="Edit" @click="handleUsedDetail(scope.row)">用料详情</el-button>-->
+<!--          <el-button link type="primary" icon="Edit" @click="handleDetail(scope.row)">工序详情</el-button>-->
+<!--          <el-button link type="primary" icon="Edit" @click="handleUsedDetail(scope.row)">用料详情</el-button>-->
           <el-button link type="primary" icon="Edit" @click="handleUpdate(scope.row)">编辑</el-button>
           <el-button link type="primary" icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
         </template>
@@ -85,21 +77,13 @@
     <el-dialog :title="title" :visible.sync="dialogShow" width="960px" @close="beforeClose">
       <el-form ref="form" :model="form" class="commen-form" :rules="rules" label-width="100px">
         <el-row>
-          <el-col :span="8">
-            <el-form-item prop="bomNo" label="图纸号">
-              <el-input v-model="form.bomNo" />
-            </el-form-item>
-          </el-col>
+
           <el-col :span="8">
             <el-form-item prop="itemNo" label="产品编码">
               <el-input v-model="form.itemNo" :disabled="form.id" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
-            <el-form-item prop="itemName" label="产品名称">
-              <el-input v-model="form.itemName" />
-            </el-form-item>
-          </el-col>
+
         </el-row>
 
         <el-row>
@@ -163,7 +147,7 @@
 
 <script>
 
-import { pagelist as itemStockPagelist } from '@/api/mes/base/itemStock'
+import { pagelist as itemStockPagelist } from '@/api/mes/base/material'
 
 export default {
   data() {
@@ -365,7 +349,7 @@ export default {
 .container {
 
   margin: 10px;
-  height: calc(100vh - 10px);
+  height: calc(100vh );
   background-color: #FFFFFF;
   padding: 20px;
 }
